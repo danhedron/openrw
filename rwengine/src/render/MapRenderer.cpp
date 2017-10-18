@@ -7,7 +7,7 @@
 #include <render/MapRenderer.hpp>
 
 const char* MapVertexShader = R"(
-#version 330
+#version 300 es
 
 layout(location = 0) in vec2 position;
 out vec2 TexCoord;
@@ -24,7 +24,9 @@ void main()
 })";
 
 const char* MapFragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
+
 
 in vec2 TexCoord;
 uniform vec4 colour;

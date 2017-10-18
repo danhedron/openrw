@@ -3,7 +3,8 @@
 namespace GameShaders {
 
 const char* WaterHQ::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(location = 0) in vec2 position;
 out vec2 TexCoords;
@@ -61,7 +62,8 @@ void main()
 })";
 
 const char* WaterHQ::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec3 Normal;
 in vec2 TexCoords;
@@ -74,7 +76,8 @@ void main() {
 })";
 
 const char* Mask3D::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(location = 0) in vec3 position;
 
@@ -98,7 +101,8 @@ void main()
 })";
 
 const char* Mask3D::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec3 pp;
 out vec4 outColour;
@@ -107,7 +111,8 @@ void main() {
 })";
 
 const char* Sky::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(std140) uniform SceneData {
 	mat4 projection;
@@ -131,18 +136,20 @@ void main() {
 })";
 
 const char* Sky::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec3 Position;
 uniform vec4 TopColor;
 uniform vec4 BottomColor;
 out vec4 outColour;
 void main() {
-	outColour = mix(BottomColor, TopColor, clamp(Position.z, 0, 1));
+    outColour = mix(BottomColor, TopColor, clamp(Position.z, 0.0, 1.0));
 })";
 
 const char* WorldObject::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
@@ -185,7 +192,8 @@ void main()
 })";
 
 const char* WorldObject::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec3 Normal;
 in vec2 TexCoords;
@@ -228,7 +236,8 @@ void main()
 })";
 
 const char* Particle::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec3 Normal;
 in vec2 TexCoords;
@@ -260,7 +269,7 @@ layout(std140) uniform ObjectData {
 void main()
 {
 	vec4 c = texture(tex, TexCoords);
-	c.a = clamp(0, length(c.rgb/length(vec3(1,1,1))), 1);
+    c.a = clamp(0.0, length(c.rgb/length(vec3(1,1,1))), 1.0);
 	if(c.a <= ALPHA_DISCARD_THRESHOLD) discard;
 	float fogZ = (gl_FragCoord.z / gl_FragCoord.w);
 	float fogfac = clamp( (fogStart-fogZ)/(fogEnd-fogStart), 0.0, 1.0 );
@@ -269,7 +278,8 @@ void main()
 })";
 
 const char* ScreenSpaceRect::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(location = 0) in vec2 position;
 out vec2 TexCoords;
@@ -284,7 +294,8 @@ void main()
 })";
 
 const char* ScreenSpaceRect::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec2 TexCoords;
 in vec4 Colour;
@@ -300,7 +311,8 @@ void main()
 })";
 
 const char* DefaultPostProcess::VertexShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 layout(location = 0) in vec2 position;
 out vec2 TexCoords;
@@ -311,7 +323,8 @@ void main()
 })";
 
 const char* DefaultPostProcess::FragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec2 TexCoords;
 uniform sampler2D colour;

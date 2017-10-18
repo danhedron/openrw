@@ -372,7 +372,7 @@ void GameRenderer::renderWorld(GameWorld* world, const ViewCamera& camera,
 
     renderer->pushDebugGroup("Water");
 
-    water.render(this, world);
+    //water.render(this, world);
 
     profWater = renderer->popDebugGroup();
 

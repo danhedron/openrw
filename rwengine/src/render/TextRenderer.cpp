@@ -20,7 +20,7 @@ glm::vec4 indexToCoord(int font, int index) {
 }
 
 const char* TextVertexShader = R"(
-#version 330
+#version 300 es
 
 layout(location = 0) in vec2 position;
 layout(location = 3) in vec2 texcoord;
@@ -39,7 +39,8 @@ void main()
 })";
 
 const char* TextFragmentShader = R"(
-#version 330
+#version 300 es
+precision highp float;
 
 in vec2 TexCoord;
 in vec3 Colour;
