@@ -28,10 +28,9 @@ set(TESTS
     Pickup
     Renderer
     RWBStream
-    SaveGame
+    SaveStreams
     ScriptMachine
     State
-    SaveStreams
     Text
     TrafficDirector
     Vehicle
