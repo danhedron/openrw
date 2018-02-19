@@ -36,7 +36,7 @@ struct BasicState {
     GameStringChar saveName[24];
     SystemTime saveTime;
     uint32_t unknown;
-    uint16_t islandNumber;
+    uint32_t islandNumber;
     glm::vec3 cameraPosition;
     uint32_t gameMinuteMS;
     uint32_t lastTick;

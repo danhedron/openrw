@@ -1,5 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include <serialization/Stream.hpp>
+#include <engine/GameSerialization.inl>
 
 #include "test_Globals.hpp"
 
@@ -41,17 +42,37 @@ private:
     uint8_t _cursor {0};
     const std::vector<uint8_t>& _data;
 };
+using namespace serialize;
 
 BOOST_AUTO_TEST_SUITE(SaveStreamTests)
 
 BOOST_AUTO_TEST_CASE(test_read_block)
 {
-    using namespace serialize;
     MemoryStream mem (kSaveTestBlock);
+    BlockStream <decltype(mem)> block (mem);
+    BOOST_REQUIRE_EQUAL(block.size(), 188);
+}
 
+BOOST_AUTO_TEST_CASE(test_read_basic)
+{
+    MemoryStream mem (kSaveTestBlock);
     BlockStream <decltype(mem)> block (mem);
 
-    BOOST_CHECK_EQUAL(block.size(), 188);
+    BasicState state {};
+
+    BOOST_REQUIRE(serialize_value(block, state));
+
+    BOOST_CHECK_EQUAL(state.saveName[0], '\'');
+    BOOST_CHECK_EQUAL(state.saveName[1], 'L');
+    BOOST_CHECK_EQUAL(state.islandNumber, 1);
+    BOOST_CHECK_EQUAL(state.cameraPosition.x, 884.5f);
+    BOOST_CHECK_EQUAL(state.gameHour, 14);
+    BOOST_CHECK_EQUAL(state.gameMinute, 42);
+    BOOST_CHECK_EQUAL(state.frameCounter, 16466);
+    BOOST_CHECK_EQUAL(state.nextWeather, 0);
+    BOOST_CHECK_EQUAL(state.forcedWeather, uint16_t(-1));
+    BOOST_CHECK_EQUAL(state.weatherType, 3);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()
