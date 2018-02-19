@@ -31,6 +31,7 @@ set(TESTS
     SaveGame
     ScriptMachine
     State
+    SaveStreams
     Text
     TrafficDirector
     Vehicle
