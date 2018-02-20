@@ -47,11 +47,6 @@ typedef uint16_t BlockWord;
 typedef uint32_t BlockDword;
 typedef BlockDword BlockSize;
 
-struct Block0ContactInfo {
-    BlockDword missionFlag;
-    BlockDword baseBrief;
-};
-
 struct Block0BuildingSwap {
     BlockDword type;
     BlockDword handle;
@@ -84,21 +79,6 @@ struct Block0RunningScript {
     BlockDword wakeTimer;
     BlockWord ifNumber;  // ?
     uint8_t unknown[6];
-};
-
-struct Block0ScriptData {
-    BlockDword onMissionOffset;
-    Block0ContactInfo contactInfo[16];
-    uint8_t unknown[0x100];
-    BlockDword lastMissionPassedTime;
-    Block0BuildingSwap buildingSwap[25];
-    Block0InvisibilitySettings invisibilitySettings[20];
-    uint8_t scriptRunning;
-    uint8_t _align0[3];
-    BlockDword mainSize;
-    BlockDword largestMissionSize;
-    BlockWord missionCount;
-    uint8_t _align1[2];
 };
 
 struct StructWeaponSlot {
@@ -500,7 +480,69 @@ struct Block19Data {
     std::array<Block19PedType, kNrOfPedTypes> types;
 };
 
+template <class Stream>
+bool serialize_value(Stream& stream, ScriptMachine& script) {
+    using namespace serialize;
 
+    auto& scriptBytes = script.getGlobalData();
+    std::uint32_t variableSize = (uint32_t) scriptBytes.size();
+    serialize_value(stream, variableSize);
+    if (scriptBytes.size() != variableSize) {
+        scriptBytes.resize(variableSize);
+    }
+    if (!stream.serialize_raw(scriptBytes.data(), variableSize)) {
+        return false;
+    }
+
+    {
+        BlockStream<Stream> innerBlock{stream};
+
+        static_assert(Stream::Reading);
+        std::uint32_t onMissionOffset = 0;
+        serialize_value(innerBlock, onMissionOffset);
+
+        serialize_value(innerBlock, script.getState()->scriptContacts);
+
+        uint8_t unknown[0x100] = {};
+        serialize_value(innerBlock, unknown);
+
+        std::uint32_t lastMissionPassTime = 0;
+        serialize_value(innerBlock, lastMissionPassTime);
+
+        std::array<Block0BuildingSwap, 25> buildingSwaps {};
+        serialize_value(innerBlock, buildingSwaps);
+
+        std::array<Block0InvisibilitySettings, 20> invisibility {};
+        serialize_value(innerBlock, invisibility);
+
+        std::uint8_t onMissionFlag = 0;
+        serialize_value(innerBlock, onMissionFlag);
+
+        std::uint8_t align3[3];
+        serialize_value(innerBlock, align3);
+
+        std::uint32_t mainSize = 0;
+        serialize_value(innerBlock, mainSize);
+        std::uint32_t missionMax = 0;
+        serialize_value(innerBlock, missionMax);
+        std::uint16_t missionCount = 0;
+        serialize_value(innerBlock, missionCount);
+        std::uint8_t align2[2];
+        serialize_value(innerBlock, align2);
+    }
+
+    std::uint32_t scriptCount = 0;
+    serialize_value(stream, scriptCount);
+    std::vector<Block0RunningScript> runningScripts {scriptCount};
+    stream.serialize_raw(runningScripts.data(), sizeof(Block0RunningScript) * scriptCount);
+
+    return true;
+}
+
+/**
+ * Base Block Serialization Template
+ * @tparam B The number of the block (@see serialize_blocks_impl)
+ */
 template <int B>
 struct block {
     template <class Stream>
@@ -516,6 +558,7 @@ template <>
 struct block<0> {
     template <class Stream>
     static bool serialize(Stream& block, GameState& state) {
+        using namespace serialize;
         serialize_value(block, state.basic);
         RW_MESSAGE("Time: " << int(state.basic.gameHour) << ":"
                             << int(state.basic.gameMinute));
@@ -524,6 +567,19 @@ struct block<0> {
                                << state.basic.lastWeather << "/"
                                << state.basic.nextWeather
                                << "(" << state.basic.forcedWeather << ")");
+        {
+            BlockStream<Stream> scriptBlock(block);
+            constexpr std::array<char, 4> kScriptMagic{'S', 'C', 'R', '\0'};
+            auto scriptMagic = kScriptMagic;
+            serialize_value(scriptBlock, scriptMagic);
+            if (scriptMagic != kScriptMagic) {
+                RW_ERROR("Invalid Script Block");
+                return false;
+            }
+            BlockStream<decltype(scriptBlock)> innerScriptBlock(scriptBlock);
+            serialize_value(innerScriptBlock, *state.script);
+        }
+
         return true;
     }
 };
