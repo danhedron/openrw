@@ -41,11 +41,8 @@ struct BasicState {
     uint32_t gameMinuteMS;
     uint32_t lastTick;
     uint8_t gameHour;
-    uint8_t _align0[3];
     uint8_t gameMinute;
-    uint8_t _align1[3];
     uint16_t padMode;
-    uint8_t _align2[2];
     uint32_t timeMS;
     float timeScale;
     float timeStep;
@@ -55,11 +52,8 @@ struct BasicState {
     float framesPerUpdate;
     float timeScale2;
     uint16_t lastWeather;
-    uint8_t _align3[2];
     uint16_t nextWeather;
-    uint8_t _align4[2];
     uint16_t forcedWeather;
-    uint8_t _align5[2];
     float weatherInterpolation;
     uint8_t dateTime[24];  // Unused
     uint32_t weatherType;
