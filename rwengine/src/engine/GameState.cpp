@@ -1,3 +1,4 @@
+#include <rw/types.hpp>
 #include "engine/GameState.hpp"
 
 BasicState::BasicState()
@@ -144,4 +145,41 @@ void GameState::removeBlip(int blip) {
     if (it != radarBlips.end()) {
         radarBlips.erase(it);
     }
+}
+
+bool GameState::buildingReplaced(GameObjectID ref, uint32_t oldModel,
+                                 uint32_t newModel) {
+    auto replacement = std::find_if(
+        replacedBuildings.begin(), replacedBuildings.end(),
+        [=](BuildingReplacement& b) -> bool { return b.ref == ref; });
+    if (replacement == replacedBuildings.end()) {
+        replacement = std::find_if(
+                replacedBuildings.begin(), replacedBuildings.end(),
+                [=](BuildingReplacement& b) -> bool { return b.type == 0; });
+    }
+    RW_ASSERT(replacement != replacedBuildings.end());
+
+    if (replacement->type != 0 && replacement->newModel == newModel &&
+        replacement->oldModel == oldModel) {
+        return false;
+    }
+
+    if (replacement->oldModel == newModel) {
+        *replacement = {};
+    }
+    else {
+        replacement->type = 2;
+        replacement->ref = ref;
+        replacement->newModel = newModel;
+        replacement->oldModel = oldModel;
+    }
+
+    return true;
+}
+
+BuildingReplacement* GameState::findReplacement(GameObjectID ref) {
+    auto found = std::find_if(
+        replacedBuildings.begin(), replacedBuildings.end(),
+        [=](BuildingReplacement& b) -> bool { return b.ref == ref; });
+    return found == replacedBuildings.end() ? nullptr : &(*found);
 }

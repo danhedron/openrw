@@ -5,6 +5,32 @@
 
 BOOST_AUTO_TEST_SUITE(ObjectDataTests)
 
+BOOST_AUTO_TEST_CASE(test_replace_building) {
+    GameState s;
+
+    constexpr GameObjectID kTestObject = 12;
+
+    BOOST_CHECK(s.buildingReplaced(kTestObject, 100, 101));
+    BOOST_CHECK(!s.buildingReplaced(kTestObject, 100, 101));
+    BOOST_REQUIRE(s.findReplacement(kTestObject));
+    BOOST_CHECK_EQUAL(s.findReplacement(kTestObject)->ref, kTestObject);
+    BOOST_CHECK_EQUAL(s.findReplacement(kTestObject)->oldModel, 100);
+    BOOST_CHECK_EQUAL(s.findReplacement(kTestObject)->newModel, 101);
+    BOOST_CHECK_EQUAL(s.findReplacement(kTestObject)->type, 2);
+}
+
+BOOST_AUTO_TEST_CASE(test_clear_building_replacement) {
+    GameState s;
+
+    constexpr GameObjectID kTestObject = 12;
+
+    BOOST_CHECK(s.buildingReplaced(kTestObject, 100, 101));
+    BOOST_CHECK(!s.buildingReplaced(kTestObject, 100, 101));
+    BOOST_CHECK(s.findReplacement(kTestObject));
+    BOOST_CHECK(s.buildingReplaced(kTestObject, 101, 100));
+    BOOST_CHECK(!s.findReplacement(kTestObject));
+}
+
 #if RW_TEST_WITH_DATA
 BOOST_AUTO_TEST_CASE(test_object_data) {
     {
@@ -49,9 +75,6 @@ BOOST_AUTO_TEST_CASE(test_object_data) {
         BOOST_CHECK_EQUAL(def->wheelmodel_, 164);
         BOOST_CHECK_CLOSE(def->wheelscale_, 0.8f, 0.01f);
     }
-}
-
-BOOST_AUTO_TEST_CASE(test_gamedata_data) {
 }
 #endif
 

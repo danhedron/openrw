@@ -12,6 +12,7 @@
 #include "engine/Animator.hpp"
 #include "engine/GameData.hpp"
 #include "engine/GameWorld.hpp"
+#include "engine/GameState.hpp"
 
 InstanceObject::InstanceObject(GameWorld* engine, const glm::vec3& pos,
                                const glm::quat& rot, const glm::vec3& scale,
@@ -122,36 +123,43 @@ void InstanceObject::tick(float dt) {
 }
 
 void InstanceObject::changeModel(BaseModelInfo* incoming, int atomicNumber) {
+    if (!incoming) {
+        return;
+    }
+
     if (body) {
         body.reset();
     }
 
-    if (incoming) {
-        if (!incoming->isLoaded()) {
-            engine->data->loadModel(incoming->id());
-        }
+    if (!incoming->isLoaded()) {
+        engine->data->loadModel(incoming->id());
+    }
 
-        changeModelInfo(incoming);
-        /// @todo this should only be temporary
-        setModel(getModelInfo<SimpleModelInfo>()->getModel());
-        auto collision = getModelInfo<SimpleModelInfo>()->getCollision();
+    const auto currentModel = getModelInfo<SimpleModelInfo>();
+    changeModelInfo(incoming);
+    const auto newModel = getModelInfo<SimpleModelInfo>();
+    setModel(newModel->getModel());
+    if (currentModel->id() != newModel->id()) {
+        engine->state->buildingReplaced(getGameObjectID(), currentModel->id(),
+                                        newModel->id());
+    }
 
-        RW_ASSERT(getModelInfo<SimpleModelInfo>()->getNumAtomics() > atomicNumber);
-        auto atomic = getModelInfo<SimpleModelInfo>()->getAtomic(atomicNumber);
-        if (atomic) {
-            auto previous = atomic_;
-            atomic_ = atomic->clone();
-            if (previous) {
-                atomic_->setFrame(previous->getFrame());
-            } else {
-                atomic_->setFrame(std::make_shared<ModelFrame>());
-            }
+    RW_ASSERT(newModel->getNumAtomics() > atomicNumber);
+    auto atomic = newModel->getAtomic(atomicNumber);
+    if (atomic) {
+        auto previous = atomic_;
+        atomic_ = atomic->clone();
+        if (previous) {
+            atomic_->setFrame(previous->getFrame());
+        } else {
+            atomic_->setFrame(std::make_shared<ModelFrame>());
         }
+    }
 
-        if (collision) {
-            body = std::make_unique<CollisionInstance>();
-            body->createPhysicsBody(this, collision, dynamics.get());
-        }
+    auto collision = newModel->getCollision();
+    if (collision) {
+        body = std::make_unique<CollisionInstance>();
+        body->createPhysicsBody(this, collision, dynamics.get());
     }
 }
 

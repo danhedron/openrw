@@ -11,6 +11,7 @@
 
 #include <data/GameTexts.hpp>
 #include <data/VehicleGenerator.hpp>
+#include <data/ObjectData.hpp>
 #include <engine/GameInputState.hpp>
 #include <engine/ScreenText.hpp>
 #include <objects/ObjectTypes.hpp>
@@ -391,6 +392,8 @@ public:
 
     std::array<ScriptContactData, 16> scriptContacts = { };
 
+    std::array<BuildingReplacement, 25> replacedBuildings = { };
+
     GameState();
 
     /**
@@ -402,6 +405,13 @@ public:
      * Removes a blip
      */
     void removeBlip(int blip);
+
+    /**
+     * Returns any existing building replacement for ref
+     */
+    BuildingReplacement* findReplacement(GameObjectID ref);
+
+    bool buildingReplaced(GameObjectID ref, uint32_t oldModel, uint32_t newModel);
 
     /**
      * Swaps input state
