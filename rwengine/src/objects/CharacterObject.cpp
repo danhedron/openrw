@@ -32,6 +32,86 @@
 
 const float CharacterObject::DefaultJumpSpeed = 2.f;
 
+namespace {
+enum class MovementState {
+    OnFoot,
+    Driving,
+    Jumping,
+    Dead
+};
+
+using MovementAnimState = std::tuple<AnimCycle,bool>;
+
+struct MovementUpdater {
+    CharacterObject* character;
+    Animator& animator;
+    AnimGroup& anims;
+    Animation* current;
+    bool& jumped;
+    bool& running;
+
+    MovementState determineMovementState() {
+        if (!character->isAlive())          return MovementState::Dead;
+        if (jumped)                         return MovementState::Jumping;
+        if (character->getCurrentVehicle()) return MovementState::Driving;
+        return MovementState::OnFoot;
+    }
+
+    MovementAnimState death() {
+        if (current == anims.animation(AnimCycle::KnockOutShotFront0).get() &&
+            animator.isCompleted(AnimIndexMovement)) {
+            character->SetDead();
+        }
+        return {AnimCycle::KnockOutShotFront0, false};
+    }
+
+    MovementAnimState jumping() {
+        if (current == anims.animation(AnimCycle::JumpLaunch).get() &&
+            animator.isCompleted(AnimIndexMovement)) {
+            return {AnimCycle::JumpLaunch, false};
+        }
+        else if (character->isOnGround()) {
+            if (current == anims.animation(AnimCycle::JumpLand).get() &&
+                animator.isCompleted(AnimIndexMovement)) {
+                jumped = false;
+            }
+            return {AnimCycle::JumpLand, false};
+        }
+        return {AnimCycle::JumpGlide, false};
+    }
+
+    MovementAnimState onFoot(const glm::vec3& movement, float& speed) {
+        constexpr float movementEpsilon = 0.1f;
+        const auto movementLength = glm::length(movement);
+        if (movementLength < movementEpsilon) {
+            return {AnimCycle::Idle, true};
+        }
+        const auto isActionHappening =
+                (animator.getAnimation(AnimIndexAction) != nullptr);
+
+        if (running && !isActionHappening) {
+            return {
+                movementLength > 1.f? AnimCycle::Sprint : AnimCycle::Run, true
+            };
+        } else {
+            speed = 1.f / movementLength;
+            // Determine if we need to play the walk start animation
+            if (current != anims.animation(AnimCycle::Walk).get()) {
+                if (current != anims.animation(AnimCycle::WalkStart).get() ||
+                    animator.isCompleted(AnimIndexMovement)) {
+                    return {AnimCycle::WalkStart, false};
+                }
+            }
+        }
+        return {AnimCycle::Walk, true};
+    }
+
+    MovementAnimState driving() {
+        return {AnimCycle::CarSit, true};
+    }
+};
+}
+
 CharacterObject::CharacterObject(GameWorld* engine, const glm::vec3& pos,
                                  const glm::quat& rot, BaseModelInfo* modelinfo,
                                  CharacterController* controller)
@@ -113,8 +193,6 @@ void CharacterObject::destroyActor() {
 }
 
 glm::vec3 CharacterObject::updateMovementAnimation(float dt) {
-    glm::vec3 animTranslate{};
-
     if (isPlayer()) {
         auto c = static_cast<PlayerController*>(controller);
 
@@ -147,75 +225,30 @@ glm::vec3 CharacterObject::updateMovementAnimation(float dt) {
         return glm::vec3();
     }
 
-    // Things are simpler if we're in a vehicle
-    if (getCurrentVehicle()) {
-        animator->playAnimation(AnimIndexMovement,
-                                animations->animation(AnimCycle::CarSit), 1.f,
-                                true);
-        return glm::vec3();
-    }
-
-    AnimationPtr movementAnimation = animations->animation(AnimCycle::Idle);
     AnimationPtr currentAnim = animator->getAnimation(AnimIndexMovement);
-    bool isActionHappening =
-        (animator->getAnimation(AnimIndexAction) != nullptr);
+    MovementUpdater updater {this, *animator, *animations, currentAnim.get(),
+                             jumped, running};
+    AnimCycle cycle = AnimCycle::Idle;
     float animationSpeed = 1.f;
     bool repeat = true;
-    constexpr float movementEpsilon = 0.1f;
 
-    float movementLength = glm::length(movement);
-    if (!isAlive()) {
-        movementAnimation =
-            animations->animation(AnimCycle::KnockOutShotFront0);
-        repeat = false;
-        if (currentAnim ==
-                animations->animation(AnimCycle::KnockOutShotFront0) &&
-            animator->isCompleted(AnimIndexMovement)) {
-            SetDead();
-        }
-    } else if (jumped) {
-        repeat = false;
-        if (currentAnim == animations->animation(AnimCycle::JumpLaunch) &&
-            animator->isCompleted(AnimIndexMovement)) {
-            movementAnimation = animations->animation(AnimCycle::JumpLaunch);
-        }
-        if (isOnGround()) {
-            if (currentAnim != animations->animation(AnimCycle::JumpLand) ||
-                !animator->isCompleted(AnimIndexMovement)) {
-                movementAnimation = animations->animation(AnimCycle::JumpLand);
-            } else {
-                // We are done jumping
-                jumped = false;
-            }
-        } else {
-            movementAnimation = animations->animation(AnimCycle::JumpGlide);
-        }
-    } else if (movementLength > movementEpsilon) {
-        if (running && !isActionHappening) {
-            if (movementLength > 1.f) {
-                movementAnimation = animations->animation(AnimCycle::Sprint);
-            } else {
-                movementAnimation = animations->animation(AnimCycle::Run);
-            }
-            animationSpeed = 1.f;
-        } else {
-            animationSpeed = 1.f / movementLength;
-            // Determine if we need to play the walk start animation
-            if (currentAnim != animations->animation(AnimCycle::Walk)) {
-                if (currentAnim !=
-                        animations->animation(AnimCycle::WalkStart) ||
-                    !animator->isCompleted(AnimIndexMovement)) {
-                    movementAnimation =
-                        animations->animation(AnimCycle::WalkStart);
-                } else {
-                    movementAnimation = animations->animation(AnimCycle::Walk);
-                }
-            } else {
-                // Keep walking
-                movementAnimation = animations->animation(AnimCycle::Walk);
-            }
-        }
+    switch (updater.determineMovementState()) {
+        case MovementState::Dead:
+            std::tie(cycle, repeat) = updater.death();
+            break;
+        case MovementState::Jumping:
+            std::tie(cycle, repeat) = updater.jumping();
+            break;
+        case MovementState::OnFoot:
+            std::tie(cycle, repeat) =
+                    updater.onFoot(movement, animationSpeed);
+            break;
+        case MovementState::Driving:
+            std::tie(cycle, repeat) = updater.driving();
+            break;
     }
+
+    auto movementAnimation = animations->animation(cycle);
 
     if (isPlayer() && static_cast<PlayerController*>(controller)->isAdrenalineActive() &&
         movementAnimation == animations->animation(AnimCycle::WalkStart)) {
@@ -230,11 +263,11 @@ glm::vec3 CharacterObject::updateMovementAnimation(float dt) {
         animator->setAnimationSpeed(AnimIndexMovement, animationSpeed);
     }
 
-    if (jumped && !isOnGround() && jumpAnimation != nullptr)
-        movementAnimation = jumpAnimation;
+    if (cycle == AnimCycle::CarSit) return {};
 
     // If we have to, interrogate the movement animation
     const auto& modelroot = getClump()->getFrame();
+    glm::vec3 animTranslate{};
     if (movementAnimation != animations->animation(AnimCycle::Idle) &&
         !modelroot->getChildren().empty()) {
         const auto& root = modelroot->getChildren()[0];
@@ -344,9 +377,8 @@ void CharacterObject::updateCharacter(float dt) {
      *  (time adjusted for velocity).
      */
 
+    glm::vec3 walkDir = updateMovementAnimation(dt);
     if (physCharacter) {
-        glm::vec3 walkDir = updateMovementAnimation(dt);
-
         if (canTurn()) {
             float yaw = m_look.x;
             // When strafing we need to detach look direction from movement
@@ -417,8 +449,6 @@ void CharacterObject::updateCharacter(float dt) {
             }
         }
         _lastHeight = getPosition().z;
-    } else {
-        updateMovementAnimation(dt);
     }
 }
 
@@ -557,12 +587,6 @@ void CharacterObject::jump() {
         physCharacter->jump(btVector3(0.f, 0.f, 0.f));
 #endif
         jumped = true;
-        jumpAnimation = animator->getAnimation(AnimIndexMovement);
-
-        // There is no kinetic energy left after a jump
-        if (jumpAnimation == animations->animation(AnimCycle::JumpLand))
-            jumpAnimation = nullptr;
-
         animator->playAnimation(AnimIndexMovement,
                                 animations->animation(AnimCycle::JumpLaunch),
                                 1.f, false);
