@@ -12,6 +12,9 @@ set(RWENGINE_SOURCES
     src/ai/TrafficDirector.cpp
     src/ai/TrafficDirector.hpp
 
+    src/animation/AnimationSystem.cpp
+    src/animation/AnimationSystem.hpp
+
     src/audio/alCheck.cpp
     src/audio/alCheck.hpp
     src/audio/SfxParameters.cpp
