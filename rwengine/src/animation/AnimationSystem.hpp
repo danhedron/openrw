@@ -4,7 +4,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -25,6 +27,14 @@ struct AnimationKeyframe {
     }
 
     AnimationKeyframe() = default;
+
+    static AnimationKeyframe interpolate(const AnimationKeyframe& a,
+                                         const AnimationKeyframe& b,
+                                         float time);
+
+    static std::array<const AnimationKeyframe*,2>
+    findKeyframes(float t,
+                  const std::vector<AnimationKeyframe>& keyframes);
 };
 
 struct AnimationBone {
@@ -54,7 +64,6 @@ struct AnimationBone {
     ~AnimationBone() = default;
 
     AnimationKeyframe getInterpolatedKeyframe(float time);
-    AnimationKeyframe getKeyframe(float time);
 };
 
 /**

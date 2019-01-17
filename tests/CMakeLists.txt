@@ -1,5 +1,6 @@
 set(TESTS
     Animation
+    AnimationSystem
     Archive
     Buoyancy
     Character

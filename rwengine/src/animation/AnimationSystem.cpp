@@ -1,5 +1,40 @@
 #include "AnimationSystem.hpp"
 
+#include <rw/debug.hpp>
+
+AnimationKeyframe
+AnimationKeyframe::interpolate(const AnimationKeyframe &a,
+                               const AnimationKeyframe &b,
+                               float time) {
+    auto alpha = (time - a.starttime) / (b.starttime - a.starttime);
+    return {
+        glm::normalize(glm::slerp(a.rotation, b.rotation, alpha)),
+        glm::mix(a.position, b.position, alpha),
+        glm::mix(a.scale, b.scale, alpha), time,
+        std::max(a.id, b.id)
+    };
+}
+
+std::array<const AnimationKeyframe*,2>
+AnimationKeyframe::findKeyframes(float t,
+                                 const std::vector<AnimationKeyframe>& frames)
+{
+    RW_ASSERT(!frames.empty());
+
+    std::array<const AnimationKeyframe*,2> result {{&frames[0], &frames[0]}};
+
+    for (auto i = 0u; i < frames.size(); ++i) {
+        auto& frame = frames[i];
+        if (frame.starttime >= t) {
+            result[1] = &frame;
+            break;
+        }
+        result[0] = &frame;
+    }
+
+    return result;
+}
+
 bool findKeyframes(float t, AnimationBone* bone, AnimationKeyframe& f1,
                    AnimationKeyframe& f2, float& alpha) {
     for (size_t f = 0; f < bone->frames.size(); ++f) {
@@ -40,15 +75,6 @@ AnimationKeyframe AnimationBone::getInterpolatedKeyframe(float time) {
                 std::max(f1.id, f2.id)};
     }
 
-    return frames.back();
-}
-
-AnimationKeyframe AnimationBone::getKeyframe(float time) {
-    for (auto &frame : frames) {
-        if (time >= frame.starttime) {
-            return frame;
-        }
-    }
     return frames.back();
 }
 
