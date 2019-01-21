@@ -9,7 +9,7 @@ BOOST_AUTO_TEST_SUITE(AnimationTests, DATA_TEST_PREDICATE)
 
 BOOST_AUTO_TEST_CASE(test_matrix) {
     {
-        auto animation = std::make_shared<Animation>();
+        auto animation = std::make_shared<animation::Animation>();
 
         /** Models are currently needed to relate animation bones <=> model
          * frame #s. */
@@ -19,9 +19,9 @@ BOOST_AUTO_TEST_CASE(test_matrix) {
 
         animation->duration = 1.f;
         animation->bones.emplace(
-            "player", AnimationBone(
-                          "player", 0, 0, 1.0f, AnimationBone::RT0,
-                          std::vector<AnimationKeyframe>{
+            "player", animation::Bone(
+                          "player", 0, 0, 1.0f, animation::Bone::RT0,
+                          std::vector<animation::KeyFrame>{
                               {glm::quat{1.0f, 0.0f, 0.0f, 0.0f},
                                glm::vec3(0.f, 0.f, 0.f), glm::vec3(), 0.f, 0},
                               {glm::quat{1.0f, 0.0f, 0.0f, 0.0f},

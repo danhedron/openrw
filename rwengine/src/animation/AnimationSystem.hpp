@@ -11,14 +11,16 @@
 #include <unordered_map>
 #include <vector>
 
-struct AnimationKeyframe {
+namespace animation {
+
+struct KeyFrame {
     glm::quat rotation{1.0f,0.0f,0.0f,0.0f};
     glm::vec3 position{};
     glm::vec3 scale{1.0f};
     float starttime = 0.f;
     int id = 0;
 
-    AnimationKeyframe(glm::quat _rotation, glm::vec3 _position, glm::vec3 _scale, float _starttime, int _id)
+    KeyFrame(glm::quat _rotation, glm::vec3 _position, glm::vec3 _scale, float _starttime, int _id)
         : rotation(_rotation)
         , position(_position)
         , scale(_scale)
@@ -26,18 +28,18 @@ struct AnimationKeyframe {
         , id(_id) {
     }
 
-    AnimationKeyframe() = default;
+    KeyFrame() = default;
 
-    static AnimationKeyframe interpolate(const AnimationKeyframe& a,
-                                         const AnimationKeyframe& b,
+    static KeyFrame interpolate(const KeyFrame& a,
+                                         const KeyFrame& b,
                                          float time);
 
-    static std::array<const AnimationKeyframe*,2>
+    static std::array<const KeyFrame*,2>
     findKeyframes(float t,
-                  const std::vector<AnimationKeyframe>& keyframes);
+                  const std::vector<KeyFrame>& keyframes);
 };
 
-struct AnimationBone {
+struct Bone {
     std::string name;
     int32_t previous;
     int32_t next;
@@ -46,13 +48,13 @@ struct AnimationBone {
     enum Data { R00, RT0, RTS };
 
     Data type;
-    std::vector<AnimationKeyframe> frames;
+    std::vector<KeyFrame> frames;
 
-    AnimationBone() = default;
+    Bone() = default;
 
-    AnimationBone(const std::string& p_name, int32_t p_previous, int32_t p_next,
+    Bone(const std::string& p_name, int32_t p_previous, int32_t p_next,
                   float p_duration, Data p_type,
-                  const std::vector<AnimationKeyframe>& p_frames)
+                  const std::vector<KeyFrame>& p_frames)
         : name(p_name)
         , previous(p_previous)
         , next(p_next)
@@ -61,24 +63,24 @@ struct AnimationBone {
         , frames(p_frames) {
     }
 
-    ~AnimationBone() = default;
+    ~Bone() = default;
 
-    AnimationKeyframe getInterpolatedKeyframe(float time);
+    KeyFrame getInterpolatedKeyframe(float time);
 };
 
 /**
  * @brief Animation data object, stores bones.
- *
- * @todo break out into Animation.hpp
  */
 struct Animation {
     std::string name;
-    std::unordered_map<std::string, AnimationBone> bones;
+    std::unordered_map<std::string, Bone> bones;
 
     ~Animation() = default;
 
     float duration;
 };
+
+} // namespace animation
 
 #endif //_RWENGINE_ANIMATIONSYSTEM_HPP_
 

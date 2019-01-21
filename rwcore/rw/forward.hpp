@@ -6,7 +6,9 @@
 #include <vector>
 
 // Forward Declarations
+namespace animation {
 struct Animation;
+}
 class Clump;
 struct FileContentsInfo;
 class ModelFrame;
@@ -15,7 +17,7 @@ class Atomic;
 class Clump;
 
 // Pointer types
-using AnimationPtr = std::shared_ptr<Animation>;
+using AnimationPtr = std::shared_ptr<animation::Animation>;
 using ModelFramePtr = std::shared_ptr<ModelFrame>;
 using GeometryPtr = std::shared_ptr<Geometry>;
 using AtomicPtr = std::shared_ptr<Atomic>;

@@ -2,10 +2,12 @@
 
 #include <rw/debug.hpp>
 
-AnimationKeyframe
-AnimationKeyframe::interpolate(const AnimationKeyframe &a,
-                               const AnimationKeyframe &b,
-                               float time) {
+namespace animation {
+
+KeyFrame
+KeyFrame::interpolate(const KeyFrame &a,
+                      const KeyFrame &b,
+                      float time) {
     auto alpha = (time - a.starttime) / (b.starttime - a.starttime);
     return {
         glm::normalize(glm::slerp(a.rotation, b.rotation, alpha)),
@@ -15,16 +17,15 @@ AnimationKeyframe::interpolate(const AnimationKeyframe &a,
     };
 }
 
-std::array<const AnimationKeyframe*,2>
-AnimationKeyframe::findKeyframes(float t,
-                                 const std::vector<AnimationKeyframe>& frames)
-{
+std::array<const KeyFrame *, 2>
+KeyFrame::findKeyframes(float t,
+                        const std::vector<KeyFrame> &frames) {
     RW_ASSERT(!frames.empty());
 
-    std::array<const AnimationKeyframe*,2> result {{&frames[0], &frames[0]}};
+    std::array<const KeyFrame *, 2> result{{&frames[0], &frames[0]}};
 
     for (auto i = 0u; i < frames.size(); ++i) {
-        auto& frame = frames[i];
+        auto &frame = frames[i];
         if (frame.starttime >= t) {
             result[1] = &frame;
             break;
@@ -35,8 +36,8 @@ AnimationKeyframe::findKeyframes(float t,
     return result;
 }
 
-bool findKeyframes(float t, AnimationBone* bone, AnimationKeyframe& f1,
-                   AnimationKeyframe& f2, float& alpha) {
+bool findKeyframes(float t, Bone *bone, KeyFrame &f1,
+                   KeyFrame &f2, float &alpha) {
     for (size_t f = 0; f < bone->frames.size(); ++f) {
         if (t <= bone->frames[f].starttime) {
             f2 = bone->frames[f];
@@ -64,8 +65,8 @@ bool findKeyframes(float t, AnimationBone* bone, AnimationKeyframe& f1,
     return false;
 }
 
-AnimationKeyframe AnimationBone::getInterpolatedKeyframe(float time) {
-    AnimationKeyframe f1, f2;
+KeyFrame Bone::getInterpolatedKeyframe(float time) {
+    KeyFrame f1, f2;
     float alpha;
 
     if (findKeyframes(time, this, f1, f2, alpha)) {
@@ -78,3 +79,4 @@ AnimationKeyframe AnimationBone::getInterpolatedKeyframe(float time) {
     return frames.back();
 }
 
+} // namespace animation

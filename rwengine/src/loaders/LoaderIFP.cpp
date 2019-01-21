@@ -20,7 +20,7 @@ bool LoaderIFP::loadFromMemory(char* data) {
         /*NAME* n =*/read<NAME>(data, dataI);
         std::string animname = readString(data, dataI);
 
-        auto animation = std::make_shared<Animation>();
+        auto animation = std::make_shared<animation::Animation>();
         animation->duration = 0.f;
         animation->name = animname;
 
@@ -35,7 +35,7 @@ bool LoaderIFP::loadFromMemory(char* data) {
             CPAN* cpan = read<CPAN>(data, dataI);
             ANIM* frames = read<ANIM>(data, dataI);
 
-            AnimationBone boneData{};
+            animation::Bone boneData{};
             boneData.name = frames->name;
             boneData.frames.reserve(frames->frames);
 
@@ -47,7 +47,7 @@ bool LoaderIFP::loadFromMemory(char* data) {
             float time = 0.f;
 
             if (type == "KR00") {
-                boneData.type = AnimationBone::R00;
+                boneData.type = animation::Bone::R00;
                 for (auto d = 0u; d < frames->frames; ++d) {
                     glm::quat q = glm::conjugate(*read<glm::quat>(data, dataI));
                     time = *read<float>(data, dataI);
@@ -56,7 +56,7 @@ bool LoaderIFP::loadFromMemory(char* data) {
                                                 d);
                 }
             } else if (type == "KRT0") {
-                boneData.type = AnimationBone::RT0;
+                boneData.type = animation::Bone::RT0;
                 for (auto d = 0u; d < frames->frames; ++d) {
                     glm::quat q = glm::conjugate(*read<glm::quat>(data, dataI));
                     glm::vec3 p = *read<glm::vec3>(data, dataI);
@@ -65,7 +65,7 @@ bool LoaderIFP::loadFromMemory(char* data) {
                         q, p, glm::vec3(1.f, 1.f, 1.f), time, d);
                 }
             } else if (type == "KRTS") {
-                boneData.type = AnimationBone::RTS;
+                boneData.type = animation::Bone::RTS;
                 for (auto d = 0u; d < frames->frames; ++d) {
                     glm::quat q = glm::conjugate(*read<glm::quat>(data, dataI));
                     glm::vec3 p = *read<glm::vec3>(data, dataI);

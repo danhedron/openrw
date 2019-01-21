@@ -7,7 +7,9 @@
 #include <map>
 #include <vector>
 
-struct AnimationBone;
+namespace animation {
+struct Bone;
+}
 class ModelFrame;
 
 /**
@@ -33,7 +35,7 @@ class Animator {
         float speed;
         /// Automatically restart
         bool repeat;
-        std::map<AnimationBone*, ModelFrame*> boneInstances;
+        std::map<animation::Bone*, ModelFrame*> boneInstances;
     };
 
     /**

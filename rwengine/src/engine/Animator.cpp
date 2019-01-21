@@ -6,7 +6,7 @@
 
 #include <data/Clump.hpp>
 
-#include "loaders/LoaderIFP.hpp"
+#include "animation/AnimationSystem.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -52,7 +52,7 @@ void Animator::tick(float dt) {
 
             BoneTransform xform;
             xform.rotation = kf.rotation;
-            if (bonePtr->type != AnimationBone::R00) {
+            if (bonePtr->type != animation::Bone::R00) {
                 xform.translation = kf.position;
             }
             frame->setTranslation(frame->getDefaultTranslation() +
