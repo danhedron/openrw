@@ -64,7 +64,7 @@ BOOST_FIXTURE_TEST_CASE(get_end, FindKeyFrameTestFixture) {
 
 BOOST_FIXTURE_TEST_CASE(get_after, FindKeyFrameTestFixture) {
     const auto result = KeyFrame::findKeyframes(10.f, keyframes);
-    BOOST_CHECK_EQUAL(result[0]->starttime, 1.f);
+    BOOST_CHECK_EQUAL(result[0]->starttime, 5.f);
     BOOST_CHECK_EQUAL(result[1]->starttime, 5.f);
 }
 

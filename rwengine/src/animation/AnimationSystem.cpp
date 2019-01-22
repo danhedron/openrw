@@ -28,10 +28,12 @@ KeyFrame::findKeyframes(float t,
         auto &frame = frames[i];
         if (frame.starttime >= t) {
             result[1] = &frame;
-            break;
+            return result;
         }
         result[0] = &frame;
     }
+
+    result[1] = result[0];
 
     return result;
 }
