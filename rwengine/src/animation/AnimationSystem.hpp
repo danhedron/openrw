@@ -10,6 +10,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <functional>
+
+class ModelFrame;
 
 namespace animation {
 
@@ -78,6 +81,67 @@ struct Animation {
     ~Animation() = default;
 
     float duration;
+};
+
+enum class Loop {
+    None,
+    Repeat
+};
+
+using PlaybackID = uint32_t;
+static constexpr auto kInvalidPlayback = static_cast<PlaybackID>(-1);
+
+using Callback = std::function<void(float,PlaybackID)>;
+using PlaybackCallback = std::pair<float,Callback>;
+
+struct Playback {
+    float time;
+    float speed;
+    float duration;
+    Loop loop;
+    uint8_t nextCallback;
+    uint8_t callbackCount;
+    std::array<PlaybackCallback, 2> callbacks;
+};
+
+struct PlaybackBone {
+    PlaybackID playback;
+    std::vector<KeyFrame>* keyframes;
+    Bone::Data fields;
+    ModelFrame* transform;
+};
+
+void ApplyBone(Playback playbacks[], PlaybackBone& bone);
+
+class AnimationSystem {
+
+    std::vector<Playback> playbacks_;
+    std::vector<PlaybackID> activePlaybacks_;
+    std::vector<PlaybackBone> playbackBones_;
+
+    Playback& get_(PlaybackID);
+
+public:
+
+    PlaybackID createPlayback(Animation&,ModelFrame*,Loop);
+
+    void addCallback(PlaybackID, PlaybackCallback);
+
+    const Playback& get(PlaybackID) const;
+
+    void setTime(PlaybackID, float);
+
+    void removePlayback(PlaybackID);
+
+    size_t activePlaybacks() const {
+        return activePlaybacks_.size();
+    }
+
+    size_t boneCount() const {
+        return playbackBones_.size();
+    }
+
+    void update(float time);
 };
 
 } // namespace animation
